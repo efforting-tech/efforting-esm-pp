@@ -22,3 +22,9 @@ export class JSON_Definition_File {
 		Object.assign(this, { filename });
 	}
 }
+
+
+export class Result {
+	constructor() {
+	}
+}
