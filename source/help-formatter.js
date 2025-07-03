@@ -130,7 +130,7 @@ export function format_arguments(argument_parser) {
 		const line_count = Math.max(syntax.length, lines.length);
 
 		for (let l=0; l<line_count+1; l++) {
-			output += (syntax[l] ?? '').padStart(max_length) + ' | ' + (lines[l] ?? '') + '\n';
+			output += (syntax[l] ?? '').padStart(max_length) + ' │ ' + (lines[l] ?? '') + '\n';
 		}
 	}
 	return output;
