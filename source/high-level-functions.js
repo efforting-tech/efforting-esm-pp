@@ -1,5 +1,7 @@
 import { argument_parser } from './argument-schema.js';
 import { format_arguments } from './help-formatter.js';
+import { start_module_server } from './dynamic_modules/server.js';
+
 import * as AT from './application-types.js';
 import * as fs from 'node:fs';
 
@@ -10,13 +12,23 @@ export function print_help() {
 	console.log(format_arguments(argument_parser))
 }
 
-export function run_application(config) {
+export async function run_application(config) {
+
 
 	const state = new AT.Result();
+	state.config = config;
+	Object.assign(state, await start_module_server());
 
-	for (const input_file of config.input_files) {
-		process_file(state, input_file);
+	try {
+		for (const input_file of config.input_files) {
+			await process_file(state, input_file);
+		}
+	} finally {
+		state.shutdown_server();
 	}
+
+
+
 }
 
 export function get_file_contents(filename, encoding, post_processor=null) {
@@ -32,12 +44,10 @@ export function get_file_contents(filename, encoding, post_processor=null) {
 }
 
 
-export function collate_definitions(definitions, encoding) {
-
+export async function collate_definitions(state, definitions, encoding) {
 	const result = {};
 
 	for (const def of definitions) {
-
 		switch (def.constructor) {
 			case AT.Literal_Definition:
 				result[def.name] = def.value;
@@ -52,9 +62,21 @@ export function collate_definitions(definitions, encoding) {
 				break;
 
 			case AT.Evaluatory_Definition:
-				console.warn(def, 'Not yet implemented' );
-				break;
+				const context = {
+					config: state.config,
+					locals: result,
+				};
+				const names = Object.keys(result);
+				const expr = await state.dynamic_import(
+					`const {${names}} = ${JSON.stringify(result)};\n` +
+					`const _esm_context_ = ${JSON.stringify(context)};\n` +
+					/* `console.log(_esm_context_.locals);` + */ 	// ← We could possibly include various debug output here
+					`export const _esm_result_ = ${def.value};`
+					, 'dynamic.js'
+				);
 
+				result[def.name] = expr._esm_result_;
+				break;
 
 			default:
 				throw new Error(`Unhandled definition: ${def.constructor}`);
@@ -65,8 +87,9 @@ export function collate_definitions(definitions, encoding) {
 
 
 
-export function process_file(state, input_file) {
-
-	console.log(collate_definitions(input_file.definitions, input_file.encoding));
+export async function process_file(state, input_file) {
+	console.log("Processing file", input_file.filename);
+	console.log(await collate_definitions(state, input_file.definitions, input_file.encoding));
+	console.log();
 
 }
