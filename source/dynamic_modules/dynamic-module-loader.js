@@ -40,7 +40,18 @@ export async function resolve(specifier, context, nextResolve) {
 			shortCircuit: true
 		};
 
+	} else if (specifier === 'data://context') {
+
+		const fileUrl = pathToFileURL(path_resolve(import.meta.dirname, 'context.js')).href;
+
+		return {
+			url: fileUrl,
+			format: 'module',
+			shortCircuit: true
+		};
+
 	}
+
 
 	if (specifier.startsWith(PREFIX)) {
 		return {

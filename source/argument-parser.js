@@ -27,29 +27,43 @@ export function parse_arguments(arguments_to_parse) {
 	})
 
 	argument_handler.register('definition_literal', (context, processor, [key, {name, value}]) => {
-		context.definitions.push(new AT.Literal_Definition(name, value));
+		context.operations.push(new AT.Literal_Definition(name, value));
+	})
+
+	argument_handler.register('push_locals', (context, processor, [key, value]) => {
+		context.operations.push(AT.PUSH_LOCALS);
+	})
+
+	argument_handler.register('pop_locals', (context, processor, [key, value]) => {
+		context.operations.push(AT.POP_LOCALS);
 	})
 
 	argument_handler.register('definition_eval', (context, processor, [key, {name, value}]) => {
-		context.definitions.push(new AT.Evaluatory_Definition(name, value));
+		context.operations.push(new AT.Evaluatory_Definition(name, value));
 	})
 
 	argument_handler.register('definition_file', (context, processor, [key, {name, value}]) => {
-		context.definitions.push(new AT.Literal_File_Definition(name, value));
+		context.operations.push(new AT.Literal_File_Definition(name, value));
 	})
 
 	argument_handler.register('defs_from_json', (context, processor, [key, value]) => {
-		context.definitions.push(new AT.JSON_Definition_File(value.value));
+		context.operations.push(new AT.JSON_Definition_File(value.value));
 	})
 
+	argument_handler.register('process_files', (context, processor, [key, value]) => {
+		context.operations.push(new AT.Process_Files_From_List_File(
+			value.value,
+			context.style,
+			context.encoding,
+		));
+	})
 
 	argument_handler.register('input_file', (context, processor, [key, value]) => {
-		context.input_files.push({
-			filename: value.value,
-			style: context.style,
-			encoding: context.encoding,
-			definitions: [...context.definitions],
-		});
+		context.operations.push(new AT.Process_File(
+			value.value,
+			context.style,
+			context.encoding,
+		));
 	})
 
 	argument_handler.register('debug', (context, processor, [key, value]) => {
@@ -68,8 +82,7 @@ export function parse_arguments(arguments_to_parse) {
 		dry_run: false,
 		action: 'run',
 		output_files: [],
-		input_files: [],
-		definitions: [],
+		operations: [],
 		style: 'c',
 		encoding: 'utf8',
 		help_format: 'default',

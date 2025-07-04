@@ -42,9 +42,14 @@ export const argument_parser = Argument_Parser('argument_parser', [
 			key: 'FILE',
 		}
 	}),
+
 	Setting('defs_from_json', '--defs-from-json', '-J', 'Load definitions from «concept JSON»', {
 		syntax_placeholder: 'FILE',
 		note: 'The «concept JSON» should contain either an array which will be run through «js Object.fromEntries()» or it should be an «js Object» already',
+	}),
+
+	Setting('process_files', '--process-file-list', '-I', 'Read files to process from a file that lists files separated by newlines.', {
+		syntax_placeholder: 'FILE',
 	}),
 
 	Static_Key_Setting('help_format', '--help-format', null, 'Set the help output format', {
@@ -70,6 +75,9 @@ export const argument_parser = Argument_Parser('argument_parser', [
 	Sub_Command('help', ['--help', '-h'], [], 'Show help and exit', {
 		validate: main_op.validate,
 	}),
+
+	Sub_Command('push_locals',  '--push-locals', [], 'Push locals to the locals stack'),
+	Sub_Command('pop_locals',  '--pop-locals', [], 'Pop from the locals stack'),
 
 	Sub_Command('input', '--', [Remaining('input_files')], 'All remaining arguments are treated as input files. Useful if files begin with hyphens and you can not add «path ./» to filenames.'),
 

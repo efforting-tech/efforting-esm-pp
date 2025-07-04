@@ -27,8 +27,22 @@ export class JSON_Definition_File {
 	}
 }
 
+export class Process_Files_From_List_File {
+	constructor(filename, style='c', encoding='utf8') {
+		Object.assign(this, { filename, style, encoding });
+	}
+}
+
+export class Process_File {
+	constructor(filename, style='c', encoding='utf8') {
+		Object.assign(this, { filename, style, encoding });
+	}
+}
 
 export class Result {
 	constructor() {
 	}
 }
+
+export const PUSH_LOCALS = Symbol('PUSH_LOCALS');
+export const POP_LOCALS = Symbol('POP_LOCALS');

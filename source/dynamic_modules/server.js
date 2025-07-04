@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'crypto';
 import { URL, pathToFileURL } from 'node:url';
 
+import { v1 as UUIDv1 } from 'uuid';
+
 import net from 'net';
 
 
@@ -14,7 +16,6 @@ function sha256_hex(input) {
 
 let server_socket;
 const code_queue = [];
-const code_seen = new Set();
 
 const server = net.createServer((socket) => {
 	socket.on('data', (chunk) => {
@@ -39,12 +40,21 @@ function create_top_url(checksum, parent_file) {
 }
 
 
-async function dynamic_import(code, parent_file=undefined) {
+function dynamic_import(code, parent_file=undefined) {
+	//In this version we don't want to reuse any modules so we will replace checksum with a time based hash or monotonic value
+
+	const key = UUIDv1();
+	code_queue.push(code);
+
+	/*
 	const checksum = sha256_hex(code);
+
 	if (!code_seen.has(checksum)) {	// Only push to queue if it is a new checksum
 		code_queue.push(code);
 	}
-	return await import(create_top_url(checksum, parent_file)); // `data://top?hash=${checksum}`);
+	*/
+
+	return import(create_top_url(key, parent_file)); // `data://top?hash=${checksum}`);
 }
 
 export function start_module_server() {
@@ -57,7 +67,7 @@ export function start_module_server() {
 			register('./dynamic-module-loader.js', import.meta.url);
 
 			const shutdown_server = () => {
-				server_socket.write('shutdown\n');
+				server_socket?.write('shutdown\n');
 				server.close();
 			};
 
