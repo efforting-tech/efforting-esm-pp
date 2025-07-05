@@ -1,0 +1,4 @@
+git tag v`jq -r .version package.json`
+
+gh release create v`jq -r .version package.json` --title "version `jq -r .version package.json`" --notes "Added --version"
+gh release upload v`jq -r .version package.json` `jq -r .name package.json`-`jq -r .version package.json`.tgz

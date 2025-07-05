@@ -1,5 +1,5 @@
 pkgname=esm-pp
-pkgver=`jq .version ../source/package.json`
+pkgver=`jq -r .version ../source/package.json`
 pkgrel=1
 pkgdesc="EcmaScript preprocessor"
 arch=('any')
