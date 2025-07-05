@@ -7,7 +7,7 @@ url="https://github.com/efforting-tech/efforting-esm-pp"
 license=('custom')
 depends=('nodejs' 'npm')
 source=("$pkgname-$pkgver.tgz::https://github.com/efforting-tech/efforting-esm-pp/releases/download/v$pkgver/efforting-esm-pp-$pkgver.tgz")
-sha256sums=('5144e9ab505b8a79a81a0ed010adb47da9dc75ed3932865fbbce3de5f03380e1')
+sha256sums=('acf4f100335faaaa8e719fae6cc7aa388fb1812a8d97c45827cf448dc7f28795')
 #updpkgsums
 
 package() {
