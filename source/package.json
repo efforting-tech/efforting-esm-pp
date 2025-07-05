@@ -1,11 +1,14 @@
 {
   "name": "efforting-esm-pp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Preprocessor using Ecma-script",
   "keywords": [
     "preprocessor",
     "template"
   ],
+  "bin": {
+    "esm-pp": "./bin/esm-pp"
+  },
   "homepage": "https://github.com/efforting-tech/efforting-esm-pp#readme",
   "bugs": {
     "url": "https://github.com/efforting-tech/efforting-esm-pp/issues"
@@ -16,13 +19,13 @@
   },
   "license": "SEE LICENSE IN license.txt",
   "author": "Mikael Lövqvist",
-  "type": "esm",
-  "main": "entry.js",
+  "type": "module",
+  "main": "bin/esm-pp",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "uuid": "^11.1.0",
-    "efforting-framework-code": "https://github.com/efforting-tech/ecmascript-framework-code/releases/download/v0.1.0/efforting.tech-framework-0.1.0.tgz"
+    "efforting.tech-framework": "https://github.com/efforting-tech/ecmascript-framework-code/releases/download/v0.1.0/efforting.tech-framework-0.1.0.tgz",
+    "uuid": "^11.1.0"
   }
 }
