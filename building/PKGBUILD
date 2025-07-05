@@ -1,0 +1,18 @@
+pkgname=esm-pp
+pkgver=0.1.1
+pkgrel=1
+pkgdesc="EcmaScript preprocessor"
+arch=('any')
+url="https://github.com/efforting-tech/efforting-esm-pp"
+license=('custom')
+depends=('nodejs' 'npm')
+source=("$pkgname-$pkgver.tgz::https://github.com/efforting-tech/efforting-esm-pp/releases/download/v$pkgver/efforting-esm-pp-$pkgver.tgz")
+sha256sums=('c36aa6edd17ad96fd42e4a99e7293b0b05f3058cc2058edc8c6a6039bb2ddc93')
+#updpkgsums
+
+package() {
+  npm install -g --prefix="$pkgdir/usr" "$srcdir/$pkgname-$pkgver.tgz"
+
+  # Optional: install license
+  #install -Dm644 "$srcdir/package/license.txt" "$pkgdir/usr/share/licenses/$pkgname/license.txt"
+}
