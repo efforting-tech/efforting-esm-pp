@@ -1,0 +1,24 @@
+{
+  "name": "efforting-esm-pp",
+  "version": "0.1.0",
+  "description": "Preprocessor using Ecma-script",
+  "keywords": [
+    "preprocessor",
+    "template"
+  ],
+  "homepage": "https://github.com/efforting-tech/efforting-esm-pp#readme",
+  "bugs": {
+    "url": "https://github.com/efforting-tech/efforting-esm-pp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/efforting-tech/efforting-esm-pp.git"
+  },
+  "license": "SEE LICENSE IN license.txt",
+  "author": "Mikael Lövqvist",
+  "type": "esm",
+  "main": "entry.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
