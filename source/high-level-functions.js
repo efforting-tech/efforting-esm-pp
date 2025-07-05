@@ -4,6 +4,8 @@ import { start_module_server } from './dynamic_modules/server.js';
 import { Property_Stack, Object_Snapshot_Stack } from 'efforting.tech-framework/data/stack.js';
 import { render_template } from './template-renderer.js';
 
+import { inspect } from 'node:util';
+
 //TODO - we use "switch item.constructor" in a few places but if we replace these with dispatchers we can also let plugins or templates add features
 
 import { pathToFileURL } from 'node:url';
@@ -160,7 +162,11 @@ export async function process_file(state, input_file) {
 	const template = style.parsing_function(state);
 	render_template(state, template);
 
-	await state.evaluate_expression(state.context.pending_expression);
+	if (state.config.debug) {
+		console.log('state.context.pending_expression:', inspect(state.context.pending_expression, { colors: true, depth: null }));
+	}
+
+	await state.execute_script(state.context.pending_expression);
 
 	state.context_stack.pop();
 

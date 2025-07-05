@@ -53,21 +53,18 @@ export class Result {
 		this.context.pending_expression += script;
 	}
 
-	async evaluate_expression(expression) {
+	async execute_script(script) {
 		const context_url = pathToFileURL(path_resolve(import.meta.dirname, 'dynamic_modules/context.js'));
-
-		this.context_stack.push({result: null});
 
 		const key_names = Object.keys(this.context.locals).join(', ');
 		const names = Object.keys(this.context.locals);
 
 		const ingress =
 			`import { PROCESS_CONTEXT as __ESM_PROCESS_CONTEXT__ } from ${JSON.stringify(context_url.href)};\n`+
-			`const {${key_names}} = __ESM_PROCESS_CONTEXT__.locals\n`+
-			`__ESM_PROCESS_CONTEXT__.result = `;
+			`const {${key_names}} = __ESM_PROCESS_CONTEXT__.locals\n`
 
 		const initial_lines = ingress.split(/\n/).length;
-		const final_expression = ingress + `\n${expression}`;
+		const final_expression = ingress + `\n${script}`;
 
 		try {
 			await this.dynamic_import(final_expression, 'dynamic.js');
@@ -87,6 +84,12 @@ export class Result {
 			}
 		}
 
+	}
+
+	async evaluate_expression(expression) {
+		this.context_stack.push({result: null});
+		`__ESM_PROCESS_CONTEXT__.result = ${expression}`;
+		await this.evaluate_expression(expression);
 		const result = this.context.result;
 		this.context_stack.pop();
 		return result;

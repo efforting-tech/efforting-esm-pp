@@ -13,9 +13,9 @@ import * as RT from 'efforting.tech-framework/parsing/regexp-tokenizer.js';
 
 
 export const line_tokenizer = new Advanced_Regex_Tokenizer('mikael/line_tokenizer', [
-	new R.Resolution_Rule(new C.Regex_Condition( /«(.*)»/ ),
+	new R.Resolution_Rule(new C.Regex_Condition( /«(.*?)»/ ),
 		(name) => {
-			return new T_AST.Expression(name + ';');	//We add semicolon here since this is the "simplified format" - still things to decide regarding inline expressions
+			return new T_AST.Expression(`emit(${name});` );	//We wrap this in emit since this is a simplified template style
 			// Maybe the T_AST should be style specific - or if there is a shared set but style can have other say. Decisions decisions.
 		}
 	),
