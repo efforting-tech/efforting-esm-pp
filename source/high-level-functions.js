@@ -2,14 +2,15 @@ import { argument_parser } from './argument-schema.js';
 import { format_arguments } from './help-formatter.js';
 import { start_module_server } from './dynamic_modules/server.js';
 import { Property_Stack, Object_Snapshot_Stack } from 'efforting.tech-framework/data/stack.js';
+import { render_template } from './template-renderer.js';
+
+//TODO - we use "switch item.constructor" in a few places but if we replace these with dispatchers we can also let plugins or templates add features
 
 import { pathToFileURL } from 'node:url';
 import { resolve as path_resolve } from 'node:path';
 import { readdirSync, statSync } from 'node:fs';
 
 import { require_style } from './style-registry.js';
-
-import { inspect } from 'node:util';
 
 
 export async function load_all_styles() {
@@ -43,12 +44,20 @@ export async function run_application(config) {
 
 	Object.assign(state, await start_module_server());
 	state.context = (await import('data://context')).PROCESS_CONTEXT;
+
+	const locals = {};
 	Object.assign(state.context, {
 		config: state.config,
-		locals: {},
+		locals: locals,
+		pending_output: '',
 	});
 	state.context_stack = new Property_Stack(state.context);
 	state.locals_stack = new Object_Snapshot_Stack(state.context.locals);
+
+	locals.emit = function emit(text) {
+		state.context.pending_output += text;
+	}
+
 
 	try {
 		for (const operation of config.operations) {
@@ -92,43 +101,7 @@ export async function run_application(config) {
 					break;
 
 				case AT.Evaluatory_Definition:
-
-					const context_url = pathToFileURL(path_resolve(import.meta.dirname, 'dynamic_modules/context.js'));
-
-					state.context_stack.push({result: null});
-
-					const key_names = Object.keys(state.context.locals).join(', ');
-					const names = Object.keys(state.context.locals);
-
-					const ingress =
-						`import { PROCESS_CONTEXT as __ESM_PROCESS_CONTEXT__ } from ${JSON.stringify(context_url.href)};\n`+
-						`const {${key_names}} = __ESM_PROCESS_CONTEXT__.locals\n`+
-						`__ESM_PROCESS_CONTEXT__.result = `;
-
-					const initial_lines = ingress.split(/\n/).length;
-					const expression = ingress + `\n${operation.value}`;
-
-					try {
-						await state.dynamic_import(expression, 'dynamic.js');
-					} catch (err) {
-						const match = err.stack.match(/:(\d+):(\d+)$/m);
-						if (match) {
-							const [line, col] = match.slice(1);
-							throw new Error(
-								`Error in expression during dynamic evaluation (line ${line-initial_lines}, column ${col}) of definition "${operation.name}" when handling "${state.context.pending_file_name}"\n` +
-								`\n${err.stack}\n`
-							);
-						} else {
-							throw new Error(
-								`Error in dynamic evaluation of definition "${operation.name}" when handling "${state.context.pending_file_name}"\n` +
-								`\n${err.stack}\n`
-							);
-						}
-					}
-
-					state.context.locals[operation.name] = state.context.result;
-					state.context_stack.pop();
-
+					state.context.locals[operation.name] = await state.evaluate_expression(operation.value);
 					break;
 
 
@@ -140,6 +113,14 @@ export async function run_application(config) {
 	} finally {
 		state.shutdown_server();
 	}
+
+	if (!config.dry_run) {
+		for (const filename of config.output_files) {
+			write_file_contents(filename, state.context.pending_output, config.encoding ?? 'utf8');
+		}
+
+	}
+
 }
 
 export function get_file_contents(filename, encoding, post_processor=null) {
@@ -154,23 +135,32 @@ export function get_file_contents(filename, encoding, post_processor=null) {
 	}
 }
 
+export function write_file_contents(filename, contents, encoding) {
+	//TODO - check for overwrite and such based on options
+	fs.writeFileSync(filename, contents, encoding);
+}
+
 
 
 
 export async function process_file(state, input_file) {
 
+	//NOTE: In the future we might want to have hooks here in case we want to load user defined features that might do something before and/or after a file is processed
+	//		this could be things like adding comments regarding origin which is a good practice that should be supported and encouraged even.
+
 	state.context_stack.push({
 		pending_file: input_file,
 		pending_file_contents: get_file_contents(input_file.filename, input_file.encoding ?? 'utf8'),
+		pending_expression: '',
 	});
 
 	const style = require_style(input_file.style ?? 'c');
 
 	//console.log("Processing file", input_file.filename, 'using', style);
 	const template = style.parsing_function(state);
+	render_template(state, template);
 
-	console.log(inspect(template, { colors: true, depth: null }));
-	console.log();
+	await state.evaluate_expression(state.context.pending_expression);
 
 	state.context_stack.pop();
 

@@ -15,7 +15,8 @@ import * as RT from 'efforting.tech-framework/parsing/regexp-tokenizer.js';
 export const line_tokenizer = new Advanced_Regex_Tokenizer('mikael/line_tokenizer', [
 	new R.Resolution_Rule(new C.Regex_Condition( /«(.*)»/ ),
 		(name) => {
-			return new T_AST.Placeholder(name);
+			return new T_AST.Expression(name + ';');	//We add semicolon here since this is the "simplified format" - still things to decide regarding inline expressions
+			// Maybe the T_AST should be style specific - or if there is a shared set but style can have other say. Decisions decisions.
 		}
 	),
 
@@ -59,14 +60,15 @@ export const parser = new O.Tree_Processor('mikael/parser', [
 
 			block += item.body.to_text();	// Since ES doesn't care about indention levels we can just add it like this
 
-			return new T_AST.Script_Block(block)
+			return new T_AST.Sequence(new T_AST.Script_Block(block), new T_AST.Text('\n'));	//Assume trailing end
 		}
 	),
 
 	new R.Resolution_Rule(new C.Title_Condition(new C.Regex_Condition( /(.*)/ )),
 		(resolver, item, match) => {
-			const parsed_line = parse_line(item.title);
-			const title = parsed_line.length ? new T_AST.Template_Line(parsed_line) : null;
+			//TODO: This format doesn't care if there is a trailing newline or not but for precise formats we need to make sure this is supported
+			const parsed_line = [...parse_line(item.title), new T_AST.Text('\n')];
+			const title = new T_AST.Template_Line(parsed_line);
 			const body = resolver.process_tree(item.body).filter(Boolean);
 			const result = (title || body.length) ? new T_AST.Template_Node(title, body) : null;
 			//TODO: attach source?

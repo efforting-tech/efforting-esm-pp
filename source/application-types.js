@@ -1,3 +1,5 @@
+import { resolve as path_resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export class Literal_Definition {
 	constructor(name, value) {
@@ -42,6 +44,55 @@ export class Process_File {
 export class Result {
 	constructor() {
 	}
+
+	write_text(text) {
+		this.context.pending_expression += `emit(${JSON.stringify(text)});`;
+	}
+
+	write_script(script) {
+		this.context.pending_expression += script;
+	}
+
+	async evaluate_expression(expression) {
+		const context_url = pathToFileURL(path_resolve(import.meta.dirname, 'dynamic_modules/context.js'));
+
+		this.context_stack.push({result: null});
+
+		const key_names = Object.keys(this.context.locals).join(', ');
+		const names = Object.keys(this.context.locals);
+
+		const ingress =
+			`import { PROCESS_CONTEXT as __ESM_PROCESS_CONTEXT__ } from ${JSON.stringify(context_url.href)};\n`+
+			`const {${key_names}} = __ESM_PROCESS_CONTEXT__.locals\n`+
+			`__ESM_PROCESS_CONTEXT__.result = `;
+
+		const initial_lines = ingress.split(/\n/).length;
+		const final_expression = ingress + `\n${expression}`;
+
+		try {
+			await this.dynamic_import(final_expression, 'dynamic.js');
+		} catch (err) {
+			const match = err.stack.match(/:(\d+):(\d+)$/m);
+			if (match) {
+				const [line, col] = match.slice(1);
+				throw new Error(
+					`Error in expression during dynamic evaluation (line ${line-initial_lines}, column ${col}) when handling "${this.context.pending_file_name}"\n` +
+					`\n${err.stack}\n`
+				);
+			} else {
+				throw new Error(
+					`Error in dynamic evaluation when handling "${this.context.pending_file_name}"\n` +
+					`\n${err.stack}\n`
+				);
+			}
+		}
+
+		const result = this.context.result;
+		this.context_stack.pop();
+		return result;
+
+	}
+
 }
 
 export const PUSH_LOCALS = Symbol('PUSH_LOCALS');

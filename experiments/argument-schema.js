@@ -10,7 +10,7 @@ a.push('-Eargh="More things";', 'stuff.xmlt', '--push-locals', '-Ditem=Other thi
 a.push('-I', 'test.lst');
 */
 
-const a = '-Z --debug -J defs.json -oout.js --style=mikael -Estuff=[auto_complete,auto_find_in_selection] -Fitem=item.txt test.ct'.split(/\s+/)
+const a = '--debug -J defs.json -oout.file --style=mikael -Estuff=[auto_complete,auto_find_in_selection] -Fitem=item.txt test.ct'.split(/\s+/)
 
 const config = parse_arguments(a);
 

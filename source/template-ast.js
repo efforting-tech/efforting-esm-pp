@@ -4,9 +4,9 @@ export class Text {
 	}
 }
 
-export class Placeholder {
-	constructor(name) {
-		Object.assign(this, { name });
+export class Expression {
+	constructor(value) {
+		Object.assign(this, { value });
 	}
 }
 
@@ -31,5 +31,11 @@ export class Template {
 export class Script_Block {
 	constructor(script) {
 		Object.assign(this, { script });
+	}
+}
+
+export class Sequence {
+	constructor(...sequence) {
+		Object.assign(this, { sequence });
 	}
 }
