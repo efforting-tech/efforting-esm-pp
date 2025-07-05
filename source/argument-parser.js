@@ -6,6 +6,10 @@ export function parse_arguments(arguments_to_parse) {
 
 	const argument_handler = new Key_Based_Mapping_Processor('argument_handler', ([key, value]) => key);
 
+	argument_handler.register('version', (context, processor, [key, value]) => {
+		context.action = 'version';
+	})
+
 	argument_handler.register('help', (context, processor, [key, value]) => {
 		context.action = 'help';
 	})

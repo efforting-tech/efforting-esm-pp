@@ -12,7 +12,7 @@ class Exclusive_Operation {
 
 }
 
-const main_op = new Exclusive_Operation('main_operation', 'run');
+const main_op = new Exclusive_Operation('main_operation', 'run', 'version');
 
 export const argument_parser = Argument_Parser('argument_parser', [
 
@@ -73,6 +73,10 @@ export const argument_parser = Argument_Parser('argument_parser', [
 		validate: main_op.validate,
 	}),
 	Sub_Command('help', ['--help', '-h'], [], 'Show help and exit', {
+		validate: main_op.validate,
+	}),
+
+	Sub_Command('version', ['--version'], [], 'Show version and exit', {
 		validate: main_op.validate,
 	}),
 

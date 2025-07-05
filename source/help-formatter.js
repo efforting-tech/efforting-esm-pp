@@ -1,5 +1,7 @@
 import { Key_Based_Mapping_Processor, Constructor_Based_Mapping_Processor } from 'efforting.tech-framework/data/dispatchers.js';
 import { Argument_Matcher, Pattern_Matcher, Sub_Command_Matcher } from 'efforting.tech-framework/parsing/argument-parser.js';
+import { inspect } from 'node:util';
+
 
 function join_sections(...sections) {
 	return sections.filter(Boolean).map(s => s.replace(/\n+$/, '')).join('\n\n');
@@ -134,5 +136,75 @@ export function format_arguments(argument_parser) {
 		}
 	}
 	return output;
+
+}
+
+
+
+export function format_usage(argument_parser) {
+
+	const usage_type_formatter = new Key_Based_Mapping_Processor('usage_type_formatter', (item) => item.type);
+	usage_type_formatter.register('Sub_Command', (context, processor, item) => {
+		const [syntax] = item.source_patterns.filter(Boolean).map(p => `${p}`);
+		const sub_command_info = [syntax];
+		processor.process_multiple(sub_command_info, ...item.sub_command_rules);
+		context.push(`(${sub_command_info.join(' ')})` );
+
+	});
+
+	usage_type_formatter.register('Positional', (context, processor, item) => {
+		//NOTE - we do not try to make sense of item.source_patterns here. Caller can always throw in a note.
+		context.push(item.syntax_placeholder ?? item.name.toUpperCase())
+	});
+
+
+	usage_type_formatter.register('Remaining', (context, processor, item) => {
+		const syntax = `${item.syntax_placeholder ?? item.name.toUpperCase()} … `
+		context.push(syntax);
+	});
+
+
+	usage_type_formatter.register('Flag', (context, processor, item) => {
+		const [syntax] = item.source_patterns.filter(Boolean).map(p => `${p}`);
+		context.push(syntax);
+	});
+
+	usage_type_formatter.register('Static_Key_Setting', (context, processor, item) => {
+		const [syntax] = item.source_patterns.filter(Boolean).map(p => `${p}=${item.syntax_placeholder ?? item.name.toUpperCase()}`);
+		context.push(syntax);
+	});
+
+
+	usage_type_formatter.register('Setting', (context, processor, item) => {
+		const [syntax] = item.source_patterns.filter(Boolean).map(p => `${p} ${item.syntax_placeholder ?? item.name.toUpperCase()}`);
+		context.push(syntax);
+	});
+
+	usage_type_formatter.register('Definition_Setting', (context, processor, item) => {
+		const key = item.syntax_placeholder?.key ?? 'KEY';
+		const value = item.syntax_placeholder?.value ?? 'VALUE';
+		const [syntax] = item.source_patterns.filter(Boolean).map(p => `${p} ${key}[=${value}]`);
+		context.push(syntax);
+	});
+
+
+	const usage_formatter = new Constructor_Based_Mapping_Processor('usage_formatter');
+	usage_formatter.register(Argument_Matcher, (context, processor, item) => {
+		for (const sub_item of item.rules) {
+			processor.process(context, sub_item);
+		}
+	});
+
+	usage_formatter.register(Pattern_Matcher, Sub_Command_Matcher, (context, processor, item) => {
+		usage_type_formatter.process(context, item);
+	});
+
+
+	let output = '';
+	const context = [];
+	usage_formatter.process(context, argument_parser);
+
+	//TODO - this is kinda terrible but at least it is something
+	return context.join(' ');
 
 }

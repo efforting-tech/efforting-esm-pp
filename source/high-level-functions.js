@@ -1,5 +1,11 @@
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const package_info = require('./package.json');
+
+
 import { argument_parser } from './argument-schema.js';
-import { format_arguments } from './help-formatter.js';
+import { format_arguments, format_usage } from './help-formatter.js';
 import { start_module_server } from './dynamic_modules/server.js';
 import { Property_Stack, Object_Snapshot_Stack } from 'efforting.tech-framework/data/stack.js';
 import { render_template } from './template-renderer.js';
@@ -32,6 +38,17 @@ import * as fs from 'node:fs';
 
 
 const file_contents_cache = {};
+
+export function print_version() {
+	const { name, version, description } = package_info;
+	const [bin] = Object.keys(package_info.bin);
+	const usage = `${bin} ${format_usage(argument_parser)}`;
+	console.log(`${description}`);
+	console.log(`\n${name} — version ${version}`);
+	console.log(`Usage: ${usage}`);
+
+}
+
 
 export function print_help() {
 	console.log(format_arguments(argument_parser))

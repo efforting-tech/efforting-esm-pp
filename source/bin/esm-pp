@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 
 import { parse_arguments } from '../argument-parser.js';
-import { print_help, run_application } from '../high-level-functions.js';
+import { print_help, print_version, run_application } from '../high-level-functions.js';
 import { inspect } from 'node:util';
 
 const config = parse_arguments(process.argv.slice(2));
 
 
 switch (config.action) {
+	case 'version':
+		print_version();
+		break;
+
 	case 'help':
 		print_help();
 		break;

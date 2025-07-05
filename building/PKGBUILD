@@ -1,5 +1,5 @@
 pkgname=esm-pp
-pkgver=0.1.1
+pkgver=`jq .version ../source/package.json`
 pkgrel=1
 pkgdesc="EcmaScript preprocessor"
 arch=('any')
@@ -7,7 +7,7 @@ url="https://github.com/efforting-tech/efforting-esm-pp"
 license=('custom')
 depends=('nodejs' 'npm')
 source=("$pkgname-$pkgver.tgz::https://github.com/efforting-tech/efforting-esm-pp/releases/download/v$pkgver/efforting-esm-pp-$pkgver.tgz")
-sha256sums=('c36aa6edd17ad96fd42e4a99e7293b0b05f3058cc2058edc8c6a6039bb2ddc93')
+sha256sums=('5144e9ab505b8a79a81a0ed010adb47da9dc75ed3932865fbbce3de5f03380e1')
 #updpkgsums
 
 package() {
