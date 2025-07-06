@@ -1,7 +1,8 @@
 import { register } from 'node:module';
-import { readFile } from 'node:fs/promises';
 import { createHash } from 'crypto';
 import { URL, pathToFileURL } from 'node:url';
+
+//TODO - this whole solution have become messy. We need a proper protocol and we need to boil things down to simplify
 
 import { v1 as UUIDv1 } from 'uuid';
 
@@ -14,17 +15,27 @@ function sha256_hex(input) {
 
 
 
-let server_socket;
+let server_connection;
 const code_queue = [];
 
 const server = net.createServer((socket) => {
+	server_connection = socket;
 	socket.on('data', (chunk) => {
 		const url = JSON.parse(chunk.toString());
+		if (url === null) {
+			socket.write(JSON.stringify('') + '\n');
+			return;
+		}
 		const pending_code = code_queue.shift();
-		socket.write(JSON.stringify(pending_code) + '\n');
-		server_socket = socket;
+		if (pending_code === undefined) {
+			socket.write(`not found ${url}\n`);
+		} else {
+			socket.write(JSON.stringify(pending_code) + '\n');
+		}
 	});
 });
+
+
 
 
 
@@ -57,22 +68,32 @@ function dynamic_import(code, parent_file=undefined) {
 	return import(create_top_url(key, parent_file)); // `data://top?hash=${checksum}`);
 }
 
-export function start_module_server() {
-	return new Promise((resolve) => {
-
-		server.listen(0, '127.0.0.1', async () => {
+export async function start_module_server() {
+	const result = await new Promise((resolve, reject) => {
+		server.listen(0, '127.0.0.1', () => {
 			const port = server.address().port;
 			process.env.CODE_SOURCE_PORT = port;
 
 			register('./dynamic-module-loader.js', import.meta.url);
 
-			const shutdown_server = () => {
-				server_socket?.write('shutdown\n');
+			async function shutdown_server() {
+				if (server_connection) {
+					await server_connection.write('shutdown\n');
+				}
 				server.close();
 			};
 
-			resolve({ dynamic_import, shutdown_server });
+			async function synchronize_context(data) {
+				if (server_connection) {
+					await server_connection.write(`update ${JSON.stringify(data)}\n`);
+				}
+			};
+
+			resolve({ dynamic_import, shutdown_server, synchronize_context });
 
 		});
+		server.on('error', reject);
 	});
+	return result;
+
 }

@@ -1,3 +1,4 @@
+import { resolve as path_resolve } from 'node:path';
 import { argument_parser } from './argument-schema.js';
 import { Key_Based_Mapping_Processor } from 'efforting.tech-framework/data/dispatchers.js';
 import * as AT from './application-types.js';
@@ -70,6 +71,10 @@ export function parse_arguments(arguments_to_parse) {
 		));
 	})
 
+	argument_handler.register('include_dir', (context, processor, [key, value]) => {
+		context.include_dirs.push(path_resolve(value.value));
+	})
+
 	argument_handler.register('debug', (context, processor, [key, value]) => {
 		context.debug = true;
 	})
@@ -91,6 +96,7 @@ export function parse_arguments(arguments_to_parse) {
 		encoding: 'utf8',
 		help_format: 'default',
 		debug: false,
+		include_dirs: [],
 	};
 
 	const bins = argument_parser.structured_argument_list(arguments_to_parse);

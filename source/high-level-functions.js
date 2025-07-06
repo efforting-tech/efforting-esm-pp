@@ -3,6 +3,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const package_info = require('./package.json');
 
+import { PROCESS_CONTEXT } from './dynamic_modules/context.js';
 
 import { argument_parser } from './argument-schema.js';
 import { format_arguments, format_usage } from './help-formatter.js';
@@ -62,7 +63,9 @@ export async function run_application(config) {
 	await load_all_styles();
 
 	Object.assign(state, await start_module_server());
-	state.context = (await import('data://context')).PROCESS_CONTEXT;
+	await import('data://connect');
+
+	state.context = PROCESS_CONTEXT;
 
 	const locals = {};
 	Object.assign(state.context, {
@@ -70,6 +73,8 @@ export async function run_application(config) {
 		locals: locals,
 		pending_output: '',
 	});
+
+
 	state.context_stack = new Property_Stack(state.context);
 	state.locals_stack = new Object_Snapshot_Stack(state.context.locals);
 
@@ -183,6 +188,7 @@ export async function process_file(state, input_file) {
 		console.log('state.context.pending_expression:', inspect(state.context.pending_expression, { colors: true, depth: null }));
 	}
 
+	await state.synchronize_context(state.context);
 	await state.execute_script(state.context.pending_expression);
 
 	state.context_stack.pop();

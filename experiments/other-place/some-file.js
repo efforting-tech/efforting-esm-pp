@@ -1,0 +1,1 @@
+console.log("This is some-file.js from other-place!");

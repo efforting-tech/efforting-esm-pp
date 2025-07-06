@@ -1,12 +1,18 @@
 import net from 'net';
 
 import { URL, fileURLToPath, pathToFileURL } from 'node:url';
-import { resolve as path_resolve } from 'path';
+import { resolve as path_resolve, dirname } from 'path';
+import { existsSync } from 'node:fs';
 
+// Note - this loader can not share PROCESS_CONTEXT from context.js with the rest of the system
+//	but we can transfer serializable data, which is useful since we might need access to some info, like configuration and current file
 
 
 const PREFIX = 'data://top';
+const loader_context = {};
 
+let client;
+let inflight = null;
 
 
 function get_parent_filename(url) {
@@ -23,7 +29,28 @@ export async function resolve(specifier, context, nextResolve) {
 
 		const in_fs = specifier.startsWith('.') || specifier.startsWith('/');
 
-		if (!in_fs) {
+
+		if (in_fs) {
+			const dirs_to_check = [dirname(loader_context.pending_file.filename), ...loader_context.config.include_dirs];
+			for (const dir of dirs_to_check) {
+				//console.log('check import relative to script', specifier, dir);
+				const resolved_path = path_resolve(dir, specifier);
+				if (existsSync(resolved_path)) {
+					const fileUrl = pathToFileURL(resolved_path).href;
+
+					//console.log('FOUND', resolved_path);
+					return {
+						url: fileUrl,
+						format: 'module',
+						shortCircuit: true
+					};
+
+				}
+			}
+			//console.log('NOT FOUND', specifier);
+			return nextResolve(specifier, context, nextResolve);
+
+		} else {
 			const parentPath = get_parent_filename(context.parentURL);
 			if (parentPath) {
 				return nextResolve(specifier, { ...context, parentURL: pathToFileURL(parentPath).href }, nextResolve);
@@ -32,26 +59,7 @@ export async function resolve(specifier, context, nextResolve) {
 			}
 		}
 
-		const fileUrl = specifier.startsWith('file://') ? specifier : pathToFileURL(path_resolve(specifier)).href;
-
-		return {
-			url: fileUrl,
-			format: 'module',
-			shortCircuit: true
-		};
-
-	} else if (specifier === 'data://context') {
-
-		const fileUrl = pathToFileURL(path_resolve(import.meta.dirname, 'context.js')).href;
-
-		return {
-			url: fileUrl,
-			format: 'module',
-			shortCircuit: true
-		};
-
 	}
-
 
 	if (specifier.startsWith(PREFIX)) {
 		return {
@@ -59,13 +67,20 @@ export async function resolve(specifier, context, nextResolve) {
 			format: 'module',
 			shortCircuit: true
 		};
+	} else if (specifier === 'data://connect') {
+		return {
+			url: specifier,
+			format: 'module',
+			shortCircuit: true,
+		};
+
 	}
+
 	return nextResolve(specifier, context, nextResolve);
 }
 
 
-let client;
-let inflight = null;
+
 
 function ensure_connection() {
 	if (!client) {
@@ -79,15 +94,22 @@ function ensure_connection() {
 				const line = buffer.slice(0, newlineIndex);
 				buffer = buffer.slice(newlineIndex + 1);
 				try {
+					//TODO: Way nicer handler
 					if (line === 'shutdown') {
 						//console.log("Shutdown loader");
 						client.end();
 						return;
-					}
-					const msg = JSON.parse(line);
-					if (inflight) {
-						inflight.resolve(msg);
-						inflight = null;
+					} else if (line.startsWith('update ')) {
+						const data = JSON.parse(line.slice(7));
+						Object.assign(loader_context, data);
+					} else if (line.startsWith('not found ')) {
+						throw new Error(`Module ${line.slice(10)} not found`);
+					} else {
+						const msg = JSON.parse(line);
+						if (inflight) {
+							inflight.resolve(msg);
+							inflight = null;
+						}
 					}
 				} catch (err) {
 					if (inflight) {
@@ -108,12 +130,24 @@ function ensure_connection() {
 }
 
 export async function load(url, context, nextLoad) {
+	if (url === 'data://connect') {
+		await ensure_connection();
 
-	if (!url.startsWith(PREFIX)) {
+		const source = await new Promise((resolve, reject) => {
+			inflight = { resolve, reject };
+			client.write(JSON.stringify(null) + '\n');
+		});
+
+		return {
+			format: 'module',
+			source,
+			shortCircuit: true,
+		};
+	} else if (!url.startsWith(PREFIX)) {
 		return nextLoad(url, context, nextLoad);
 	}
 
-	ensure_connection();
+	await ensure_connection();
 
 	const source = await new Promise((resolve, reject) => {
 		inflight = { resolve, reject };

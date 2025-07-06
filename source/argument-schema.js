@@ -48,8 +48,12 @@ export const argument_parser = Argument_Parser('argument_parser', [
 		note: 'The «concept JSON» should contain either an array which will be run through «js Object.fromEntries()» or it should be an «js Object» already',
 	}),
 
-	Setting('process_files', '--process-file-list', '-I', 'Read files to process from a file that lists files separated by newlines.', {
+	Setting('process_files', '--process-file-list', '-P', 'Read files to process from a file that lists files separated by newlines.', {
 		syntax_placeholder: 'FILE',
+	}),
+
+	Setting('include_dir', '--include-dir', '-I', 'Add include directory', {
+		syntax_placeholder: 'DIR',
 	}),
 
 	Static_Key_Setting('help_format', '--help-format', null, 'Set the help output format', {
