@@ -9,7 +9,7 @@ arch=('any')
 url=«package_info.homepage»
 license=('custom')
 depends=('nodejs' 'npm')
-source=("$pkgname-$pkgver.tgz::https://github.com/efforting-tech/efforting-esm-pp/releases/download/v$pkgver/$pkgname-$pkgver.tgz")
+source=("$pkgname-$pkgver.tgz::https://github.com/efforting-tech/$pkgname/releases/download/v$pkgver/$pkgname-$pkgver.tgz")
 sha256sums=(«release.sha256()»)
 
 package() {
