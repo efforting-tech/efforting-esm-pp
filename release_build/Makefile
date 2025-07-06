@@ -15,12 +15,12 @@ release: arch-latest
 	git tag v$(VERSION)
 	git push --tags
 	gh release create v$(VERSION) --title "version $(VERSION)" --notes "$(RELEASE_NOTES)"
-	gh release upload v$(VERSION) $(RELEASE_FILE)
+	gh release upload v$(VERSION) $(LATEST) $(BUILD_DIR)/arch-latest.tgz
 
 
 latest-package: $(LATEST)
 
-arch-latest: $(BUILD_DIR)/arch/latest/PKGBUILD
+arch-latest: $(BUILD_DIR)/arch-latest.tgz
 
 $(BUILD_DIR)/arch-latest.tgz: $(BUILD_DIR)/arch/latest/PKGBUILD
 	tar -czf $@ -C $(BUILD_DIR)/arch/latest ./
