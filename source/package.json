@@ -1,6 +1,6 @@
 {
   "name": "efforting-esm-pp",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Preprocessor using Ecma-script",
   "keywords": [
     "preprocessor",

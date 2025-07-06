@@ -13,6 +13,7 @@ LATEST:=$(BUILD_DIR)/$(RELEASE_FILE)
 release: arch-latest
 	@if [ -z "$(RELEASE_NOTES)" ]; then echo "RELEASE_NOTES is not set"; exit 1; fi
 	git tag v$(VERSION)
+	git push --tags
 	gh release create v$(VERSION) --title "version $(VERSION)" --notes "$(RELEASE_NOTES)"
 	gh release upload v$(VERSION) $(RELEASE_FILE)
 
