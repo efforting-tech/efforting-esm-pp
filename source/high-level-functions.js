@@ -71,6 +71,7 @@ export async function run_application(config) {
 	Object.assign(state.context, {
 		config: state.config,
 		locals: locals,
+		short_filter_stack: [],
 		pending_output: '',
 	});
 
@@ -78,10 +79,12 @@ export async function run_application(config) {
 	state.context_stack = new Property_Stack(state.context);
 	state.locals_stack = new Object_Snapshot_Stack(state.context.locals);
 
-	locals.emit = function emit(text) {
+	locals.emit = function emit(text, filter_stack=[]) {
+		for (const filter of filter_stack) {
+			text = filter(text);
+		}
 		state.context.pending_output += text;
 	}
-
 
 	try {
 		for (const operation of config.operations) {
@@ -172,15 +175,18 @@ export async function process_file(state, input_file) {
 	//NOTE: In the future we might want to have hooks here in case we want to load user defined features that might do something before and/or after a file is processed
 	//		this could be things like adding comments regarding origin which is a good practice that should be supported and encouraged even.
 
+	const style = require_style(input_file.style ?? 'c');
+
+	if (state.config.debug) {
+		console.log("Processing file", input_file.filename, 'using', style);
+	}
 	state.context_stack.push({
 		pending_file: input_file,
 		pending_file_contents: get_file_contents(input_file.filename, input_file.encoding ?? 'utf8'),
 		pending_expression: '',
 	});
 
-	const style = require_style(input_file.style ?? 'c');
 
-	//console.log("Processing file", input_file.filename, 'using', style);
 	const template = style.parsing_function(state);
 	render_template(state, template);
 

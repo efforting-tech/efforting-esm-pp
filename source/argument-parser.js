@@ -64,11 +64,17 @@ export function parse_arguments(arguments_to_parse) {
 	})
 
 	argument_handler.register('input_file', (context, processor, [key, value]) => {
-		context.operations.push(new AT.Process_File(
-			value.value,
-			context.style,
-			context.encoding,
-		));
+
+		if (!Array.isArray(value)) {
+			value = [value];
+		}
+		for (const sub_value of value) {
+			context.operations.push(new AT.Process_File(
+				sub_value.value,
+				context.style,
+				context.encoding,
+			));
+		}
 	})
 
 	argument_handler.register('include_dir', (context, processor, [key, value]) => {
